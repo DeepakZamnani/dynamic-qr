@@ -1,0 +1,23 @@
+{
+  "name": "backend.py",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/DeepakZamnani/dynamic-qr#readme",
+  "bugs": {
+    "url": "https://github.com/DeepakZamnani/dynamic-qr/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeepakZamnani/dynamic-qr.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "vercel": "^44.6.5"
+  }
+}

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic QR Manager</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .qr-section {
+            text-align: center;
+        }
+
+        .qr-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .qr-code {
+            margin: 20px 0;
+        }
+
+        .qr-url {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #475569;
+            word-break: break-all;
+            margin: 15px 0;
+        }
+
+        .control-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .current-destination {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .current-destination h3 {
+            color: #0369a1;
+            margin-bottom: 10px;
+        }
+
+        .destination-url {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            color: #1e293b;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            margin-top: 15px;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .loading {
+            opacity: 0.7;
+        }
+
+        .status-message {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .stats-section {
+            grid-column: 1 / -1;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #6366f1;
+        }
+
+        .stat-label {
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .instructions {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: #92400e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ol {
+            color: #b45309;
+            line-height: 1.6;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function QRManager() {
+            const [qrId] = useState('qr123');
+            const [currentDestination, setCurrentDestination] = useState('No destination set');
+            const [newUrl, setNewUrl] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [message, setMessage] = useState('');
+            const [messageType, setMessageType] = useState('');
+            const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
+            const [stats, setStats] = useState({ accessCount: 0, lastAccessed: null });
+            
+            // Replace with your actual Render URL
+            const API_BASE_URL = 'https://dynamic-qr-7g3v.onrender.com/api/';
+            const REDIRECT_BASE_URL = 'https://dynamic-qr-7g3v.onrender.com/redirect/';
+            const qrUrl = `${REDIRECT_BASE_URL}${qrId}`;
+
+            useEffect(() => {
+                generateQRCode();
+                loadCurrentDestination();
+            }, []);
+
+            const generateQRCode = async () => {
+                try {
+                    // Method 1: Try QRious library
+                    if (typeof QRious !== 'undefined') {
+                        const canvas = document.createElement('canvas');
+                        const qr = new QRious({
+                            element: canvas,
+                            value: qrUrl,
+                            size: 256,
+                            background: 'white',
+                            foreground: '#1e293b'
+                        });
+                        setQrCodeDataUrl(canvas.toDataURL());
+                    } else {
+                        // Method 2: Fallback to online QR API
+                        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrUrl)}`;
+                        setQrCodeDataUrl(qrApiUrl);
+                    }
+                } catch (error) {
+                    console.error('Error generating QR code:', error);
+                    // Method 3: Final fallback to another API
+                    const fallbackUrl = `https://chart.googleapis.com/chart?chs=256x256&cht=qr&chl=${encodeURIComponent(qrUrl)}`;
+                    setQrCodeDataUrl(fallbackUrl);
+                }
+            };
+
+            const loadCurrentDestination = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}mapping/${qrId}`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        setCurrentDestination(data.mapping.destination_url);
+                        setNewUrl(data.mapping.destination_url);
+                        setStats({
+                            accessCount: data.mapping.access_count || 0,
+                            lastAccessed: data.mapping.last_accessed
+                        });
+                    } else {
+                        setCurrentDestination('No destination set yet');
+                    }
+                } catch (error) {
+                    console.error('Error loading destination:', error);
+                    setCurrentDestination('Error loading destination');
+                }
+            };
+
+            const updateDestination = async () => {
+                if (!newUrl.trim()) {
+                    showMessage('Please enter a valid URL', 'error');
+                    return;
+                }
+
+                let url = newUrl.trim();
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+
+                setIsLoading(true);
+                try {
+                    const response = await fetch(`${API_BASE_URL}update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            qr_id: qrId,
+                            destination_url: url
+                        }),
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        setCurrentDestination(url);
+                        showMessage('QR destination updated successfully!', 'success');
+                        await loadCurrentDestination(); // Refresh stats
+                    } else {
+                        showMessage(data.error || 'Failed to update destination', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error updating destination:', error);
+                    showMessage('Network error. Please try again.', 'error');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const testQR = () => {
+                window.open(qrUrl, '_blank');
+            };
+
+            const downloadQR = async () => {
+                try {
+                    if (qrCodeDataUrl.startsWith('data:')) {
+                        // If it's a data URL (canvas), download directly
+                        const link = document.createElement('a');
+                        link.download = `qr-code-${qrId}.png`;
+                        link.href = qrCodeDataUrl;
+                        link.click();
+                    } else {
+                        // If it's an external URL, fetch and download
+                        const response = await fetch(qrCodeDataUrl);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = `qr-code-${qrId}.png`;
+                        link.href = url;
+                        link.click();
+                        window.URL.revokeObjectURL(url);
+                    }
+                } catch (error) {
+                    console.error('Error downloading QR code:', error);
+                    showMessage('Error downloading QR code. Try right-click and save image.', 'error');
+                }
+            };
+
+            const showMessage = (msg, type) => {
+                setMessage(msg);
+                setMessageType(type);
+                setTimeout(() => {
+                    setMessage('');
+                    setMessageType('');
+                }, 5000);
+            };
+
+            const formatDate = (dateString) => {
+                if (!dateString) return 'Never';
+                return new Date(dateString).toLocaleString();
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1><i className="fas fa-qrcode"></i> Dynamic QR Manager</h1>
+                        <p>Create QR codes that never change, but redirect anywhere you want</p>
+                    </div>
+
+                    <div className="main-content">
+                        <div className="qr-section">
+                            <div className="qr-container">
+                                <h2 className="section-title">
+                                    <i className="fas fa-qrcode"></i>
+                                    Your Static QR Code
+                                </h2>
+                                
+                                {qrCodeDataUrl ? (
+                                    <div className="qr-code">
+                                        <img 
+                                            src={qrCodeDataUrl} 
+                                            alt="QR Code" 
+                                            style={{maxWidth: '100%', border: '2px solid #e5e7eb', borderRadius: '10px'}}
+                                            onError={() => {
+                                                console.log('QR image failed to load, trying fallback...');
+                                                const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrUrl)}`;
+                                                setQrCodeDataUrl(fallbackUrl);
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="qr-code" style={{padding: '50px', background: '#f8fafc', borderRadius: '10px'}}>
+                                        <i className="fas fa-spinner fa-spin" style={{fontSize: '2rem', color: '#6366f1'}}></i>
+                                        <p style={{marginTop: '10px', color: '#64748b'}}>Generating QR Code...</p>
+                                    </div>
+                                )}
+                                
+                                <div className="qr-url">{qrUrl}</div>
+                                
+                                <button onClick={testQR} className="btn btn-secondary">
+                                    <i className="fas fa-external-link-alt"></i>
+                                    Test QR Code
+                                </button>
+                                
+                                <button onClick={downloadQR} className="btn btn-secondary">
+                                    <i className="fas fa-download"></i>
+                                    Download QR
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="control-section">
+                            <h2 className="section-title">
+                                <i className="fas fa-cog"></i>
+                                Manage Destination
+                            </h2>
+
+                            <div className="current-destination">
+                                <h3><i className="fas fa-map-marker-alt"></i> Current Destination</h3>
+                                <div className="destination-url">{currentDestination}</div>
+                            </div>
+
+                            <div className="input-group">
+                                <label htmlFor="url-input">
+                                    <i className="fas fa-link"></i> New Destination URL
+                                </label>
+                                <input
+                                    id="url-input"
+                                    type="url"
+                                    className="url-input"
+                                    placeholder="https://example.com"
+                                    value={newUrl}
+                                    onChange={(e) => setNewUrl(e.target.value)}
+                                />
+                            </div>
+
+                            <button
+                                onClick={updateDestination}
+                                disabled={isLoading}
+                                className="btn btn-primary"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="spinner"></div>
+                                        Updating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="fas fa-sync-alt"></i>
+                                        Update QR Destination
+                                    </>
+                                )}
+                            </button>
+
+                            {message && (
+                                <div className={`status-message status-${messageType}`}>
+                                    <i className={`fas fa-${messageType === 'success' ? 'check-circle' : 'exclamation-circle'}`}></i>
+                                    {message}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="stats-section">
+                            <h2 className="section-title">
+                                <i className="fas fa-chart-bar"></i>
+                                QR Code Statistics
+                            </h2>
+                            <div className="stats-grid">
+                                <div className="stat-card">
+                                    <div className="stat-number">{stats.accessCount}</div>
+                                    <div className="stat-label">Total Scans</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-number">{qrId}</div>
+                                    <div className="stat-label">QR Code ID</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-number" style={{fontSize: '1rem'}}>
+                                        {formatDate(stats.lastAccessed)}
+                                    </div>
+                                    <div className="stat-label">Last Scanned</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="instructions">
+                            <h3>
+                                <i className="fas fa-info-circle"></i>
+                                How It Works
+                            </h3>
+                            <ol>
+                                <li><strong>Static QR Code:</strong> The QR code above always contains the same URL</li>
+                                <li><strong>Dynamic Redirect:</strong> When scanned, it redirects to your chosen destination</li>
+                                <li><strong>Easy Updates:</strong> Change the destination anytime without reprinting the QR</li>
+                                <li><strong>Perfect for:</strong> Business cards, flyers, signs, or any printed material</li>
+                                <li><strong>Analytics:</strong> Track how many times your QR code has been scanned</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<QRManager />, document.getElementById('root'));
+    </script>
+</body>
+</html>
